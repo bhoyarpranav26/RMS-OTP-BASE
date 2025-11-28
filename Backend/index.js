@@ -1,41 +1,62 @@
 const express = require("express");
 const cors = require("cors");
-const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors({ origin: process.env.CORS_ORIGIN || "http://localhost:5173" }));
-app.use(bodyParser.json());
+// ==========================
+// CORS SETUP
+// ==========================
+const allowedOrigin = process.env.CORS_ORIGIN || "https://restom-frontend.onrender.com";
+
+app.use(
+  cors({
+    origin: allowedOrigin,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
+
+app.use(express.json());
 
 // ==========================
-// ✅ MongoDB Connection
+// MongoDB Connection
 // ==========================
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch(err => console.error("❌ MongoDB Error:", err));
+const mongoUri = process.env.MONGO_URI;
 
+if (!mongoUri) {
+  console.error("❌ ERROR: MONGO_URI is missing in Render Environment");
+} else {
+  mongoose
+    .connect(mongoUri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    })
+    .then(() => console.log("✅ MongoDB Connected Successfully"))
+    .catch((err) => console.error("❌ MongoDB Connection Error:", err));
+}
 
 // ==========================
-// ✅ Routes Import
+// Import Routes
 // ==========================
-console.log("📌 Loading auth routes...");
+console.log("📌 Importing Auth Routes...");
 const authRoutes = require("./routes/authRoutes");
 
+console.log("📌 Mounting /api/auth Routes...");
 app.use("/api/auth", authRoutes);
-console.log("📌 Auth routes mounted at /api/auth");
 
-// Root test
+// ==========================
+// Test Route
+// ==========================
 app.get("/", (req, res) => {
-  res.send("Backend is running!");
+  res.send("🚀 Backend is running on Render!");
 });
 
 // ==========================
 // Start Server
 // ==========================
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server listening on port ${PORT}`);
 });
