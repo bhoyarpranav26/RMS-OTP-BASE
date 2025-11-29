@@ -42,15 +42,26 @@ exports.signup = async (req, res) => {
       await user.save();
     }
 
-    // send email
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "Your OTP from KavyaServe",
-      text: `Hello ${name},\n\nYour OTP is ${otp}. It expires in 10 minutes.\n\nIf you didn't request this, ignore this mail.`,
-    });
+    // Optionally skip sending email in test/dev environments
+    if (process.env.SKIP_EMAIL === 'true') {
+      console.log(`SKIP_EMAIL enabled - OTP for ${email}: ${otp}`);
+      return res.status(200).json({ message: "OTP generated (skipped email)", otp });
+    }
 
-    return res.status(200).json({ message: "OTP sent to email" });
+    // send email
+    try {
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: "Your OTP from KavyaServe",
+        text: `Hello ${name},\n\nYour OTP is ${otp}. It expires in 10 minutes.\n\nIf you didn't request this, ignore this mail.`,
+      });
+      return res.status(200).json({ message: "OTP sent to email" });
+    } catch (mailErr) {
+      console.error('Mail send error:', mailErr);
+      // Do not delete the user (OTP saved) — return partial success with info for debugging
+      return res.status(500).json({ message: "Signup failed (email)", error: mailErr.message });
+    }
   } catch (err) {
     console.error("Signup error:", err);
     // handle validation error (like phone required)
