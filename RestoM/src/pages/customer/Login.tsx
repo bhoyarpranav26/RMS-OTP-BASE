@@ -3,7 +3,9 @@ import axios from "axios"
 import { FaUser, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa'
 import { useAuth } from '../../context/AuthContext'
 
-const API_BASE_URL = "http://localhost:5000/api/auth"
+// Use Vite env variable so deployed frontend can call deployed backend.
+const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:5000'
+const API_BASE_URL = `${API_BASE}/api/auth`
 
 interface LoginProps {
   onClose: () => void

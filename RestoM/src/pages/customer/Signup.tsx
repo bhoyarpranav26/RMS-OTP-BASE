@@ -2,7 +2,10 @@ import React, { useState } from 'react'
 import axios from 'axios'
 import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaPhone, FaArrowLeft } from 'react-icons/fa'
 
-const API_BASE_URL = 'http://localhost:5000/api/auth'
+// Use Vite env variable so deployed frontend can call deployed backend.
+// Set VITE_API_BASE_URL at build/deploy time (e.g. https://api.example.com)
+const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:5000'
+const API_BASE_URL = `${API_BASE}/api/auth`
 
 interface SignupProps {
   onClose: () => void

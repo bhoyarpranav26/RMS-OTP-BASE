@@ -43,7 +43,7 @@ router.post("/signup", async (req, res) => {
       await user.save();
     }
 
-    // SEND OTP EMAIL
+    // SEND OTP EMAIL (can be skipped in local tests)
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -51,6 +51,12 @@ router.post("/signup", async (req, res) => {
         pass: process.env.EMAIL_PASS, // App Password
       },
     });
+
+    if (process.env.SKIP_EMAIL === 'true') {
+      console.log(`SKIP_EMAIL enabled - OTP for ${email}: ${otp}`);
+      // Return OTP in response for local testing/dev only
+      return res.status(200).json({ message: "OTP sent (skipped)", otp });
+    }
 
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
