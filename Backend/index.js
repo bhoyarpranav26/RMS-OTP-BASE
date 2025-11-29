@@ -9,11 +9,19 @@ const PORT = process.env.PORT || 5000;
 // ==========================
 // CORS SETUP
 // ==========================
-const allowedOrigin = process.env.CORS_ORIGIN || "https://restom-frontend.onrender.com";
+// Support a comma-separated list of allowed origins via CORS_ORIGINS or the older CORS_ORIGIN env var.
+const corsEnv = process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || "";
+const allowedOrigins = corsEnv.split(",").map((s) => s.trim()).filter(Boolean);
 
 app.use(
   cors({
-    origin: allowedOrigin,
+    origin: function (origin, callback) {
+      // allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.length === 0) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) !== -1) return callback(null, true);
+      return callback(new Error("CORS not allowed by server"), false);
+    },
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
@@ -29,11 +37,9 @@ const mongoUri = process.env.MONGO_URI;
 if (!mongoUri) {
   console.error("❌ ERROR: MONGO_URI is missing in Render Environment");
 } else {
+  // The modern MongoDB Node driver no longer needs useNewUrlParser/useUnifiedTopology options.
   mongoose
-    .connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    })
+    .connect(mongoUri)
     .then(() => console.log("✅ MongoDB Connected Successfully"))
     .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 }
@@ -52,6 +58,12 @@ app.use("/api/auth", authRoutes);
 // ==========================
 app.get("/", (req, res) => {
   res.send("🚀 Backend is running on Render!");
+});
+
+// Simple health endpoint to check DB connectivity
+app.get("/health", (req, res) => {
+  const state = mongoose.connection.readyState; // 0 = disconnected, 1 = connected
+  res.json({ ok: state === 1, state });
 });
 
 // ==========================
